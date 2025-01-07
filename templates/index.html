@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container text-center">
+    <div class="row mb-3">
+        <div class="col">
+            <button class="btn btn-success">Kategoria</button>
+            <button class="btn btn-success">Na topie 📈</button>
+            <button class="btn btn-success">Czytelnicy 📖</button>
+            <button class="btn btn-success">Kontakt 📞</button>
+            <button class="btn btn-success">Najczęstsze pytania ❓</button>
+        </div>
+    </div>
+
+    <form class="mb-4">
+        <div class="input-group">
+            <select class="form-select" name="category">
+                <option value="">None</option>
+                <option value="1">Przygody</option>
+                <option value="2">Biografie</option>
+                <option value="3">Fantastyka</option>
+            </select>
+            <input type="text" class="form-control" placeholder="Search..." name="q">
+            <button class="btn btn-success">🔍</button>
+        </div>
+    </form>
+
+    <div class="row justify-content-center">
+        {% for book in books %}
+        <div class="card book-card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ book.title }} ({{ book.published_year }})</h5>
+                <p class="card-text">{{ book.genre_names }}</p>
+                <div class="dropdown">
+                    <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        📚
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Wypożycz</a></li>
+                        <li><a class="dropdown-item" href="#">Szczegóły</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
