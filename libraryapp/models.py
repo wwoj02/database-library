@@ -7,7 +7,6 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
-
 class Authors(models.Model):
     author_id = models.AutoField(primary_key=True)
     author_name = models.CharField(max_length=50)
@@ -22,20 +21,20 @@ class Books(models.Model):
     title = models.CharField(max_length=255)
     publisher = models.CharField(max_length=45)
     published_year = models.CharField(max_length=4)
+    image = models.ImageField(upload_to='book_images/', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'books'
 
 
 class Booksauthors(models.Model):
-    book = models.OneToOneField(Books, models.DO_NOTHING, primary_key=True)  # The composite primary key (book_id, author_id) found, that is not supported. The first column is selected.
+    book = models.OneToOneField(Books, models.DO_NOTHING, primary_key=True)
     author = models.ForeignKey(Authors, models.DO_NOTHING)
 
     class Meta:
         managed = False
         db_table = 'booksauthors'
-        unique_together = (('book', 'author'),)
 
 
 class Booksgenres(models.Model):
@@ -46,6 +45,7 @@ class Booksgenres(models.Model):
         managed = False
         db_table = 'booksgenres'
         unique_together = (('book', 'genre'),)
+
 
 class Fines(models.Model):
     fine_id = models.AutoField(primary_key=True)  # The composite primary key (fine_id, user_id, loans_loan_id) found, that is not supported. The first column is selected.
@@ -82,6 +82,28 @@ class Holds(models.Model):
         managed = False
         db_table = 'holds'
         unique_together = (('hold_id', 'user', 'physical_book'),)
+
+
+class LibraryappContact(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    phone = models.CharField(max_length=20)
+    email = models.CharField(max_length=254)
+    address = models.TextField()
+    working_hours = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'libraryapp_contact'
+
+
+class LibraryappFaq(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'libraryapp_faq'
 
 
 class Loans(models.Model):
@@ -127,14 +149,30 @@ class PhysicalBooks(models.Model):
 
 class Users(models.Model):
     user_id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=20)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.CharField(max_length=50)
-    phone_number = models.CharField(max_length=50)
+    username = models.CharField(max_length=20, unique=False)
+    first_name = models.CharField(max_length=50, blank=True, unique=False)
+    last_name = models.CharField(max_length=50, blank=True, unique=False)
+    email = models.CharField(max_length=50, blank=True, unique=False)
+    phone_number = models.CharField(max_length=50, blank=True, unique=False)
     role = models.CharField(max_length=5)
-    password_hash = models.CharField(max_length=100, blank=True, null=True)
+    password_hash = models.CharField(max_length=100)
 
     class Meta:
         managed = False
         db_table = 'users'
+
+class Contact(models.Model):
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    address = models.TextField()
+    working_hours = models.CharField(max_length=100)
+
+    def __str__(self):
+        return "Contact Information"
+
+class FAQ(models.Model):
+    question = models.CharField(max_length=255)  # Pytanie
+    answer = models.TextField()  # Odpowiedź
+
+    def __str__(self):
+        return self.question

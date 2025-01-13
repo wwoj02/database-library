@@ -1,20 +1,21 @@
-from .forms import UserRegistrationForm, LoginForm
-from .models import Users, Books, PhysicalBooks, Booksauthors, Booksgenres, Authors, Genres
+from django.http import HttpResponse
+from django.core.files.storage import FileSystemStorage
+from .forms import UserRegistrationForm, LoginForm, ContactForm
+from .models import Users, Books, PhysicalBooks, Booksauthors, Booksgenres, Authors, Genres, Contact, FAQ
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import check_password
-from .models import Users  # Assuming you have a custom `Users` model
-from django.contrib.auth import login
-
 
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()  # Save the user to the MySQL database
-            return redirect('login')  # Redirect to login page
+            form.save()
+            return redirect('login')
+        else:
+            return render(request, 'register.html', {'form': form})
     else:
         form = UserRegistrationForm()
-    return render(request, 'register.html', {'form': form})
+        return render(request, 'register.html', {'form': form})
 
 
 def login_view(request):
@@ -55,8 +56,21 @@ def add_book(request):
         published_year = request.POST['published_year']
         number_of_copies = int(request.POST['number_of_copies'])
 
-        book = Books.objects.create(title=title, publisher=publisher, published_year=published_year)
+        # Handle the image
+        image = request.FILES.get('image')
+        if image:
+            fs = FileSystemStorage()
+            image_path = fs.save(image.name, image)
+        else:
+            image_path = None
 
+        # Create the book object with the image path
+        book = Books.objects.create(
+            title=title,
+            publisher=publisher,
+            published_year=published_year,
+            image=image_path
+        )
 
         # Handle authors
         author_names = request.POST['authors'].split(',')
@@ -70,10 +84,11 @@ def add_book(request):
             genre, created = Genres.objects.get_or_create(genre_name=name.strip())
             Booksgenres.objects.create(book=book, genre=genre)
 
+        # Create physical copies
         for i in range(number_of_copies):
             PhysicalBooks.objects.create(book=book, state=1)
 
-        return redirect('display_books')  # Adjust this to the name of your display_books URL
+        return redirect('home')
 
     return render(request, 'add_book.html')
 
@@ -114,3 +129,122 @@ def index(request):
         })
 
     return render(request, 'index.html', {'books': books_with_genres})
+
+
+def contact(request):
+    contact_info, created = Contact.objects.get_or_create(pk=1, defaults={
+        'phone': '+48 123-456-789',  # Wartości domyślne
+        'email': 'contact@example.com',
+        'address': '123 Main Street',
+        'working_hours': '9 AM - 5 PM',
+    })
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST, instance=contact_info)
+        if form.is_valid():
+            form.save()
+            return redirect('contact')
+    else:
+        form = ContactForm(instance=contact_info)
+
+    return render(request, 'contact.html', {'form': form, 'contact_info': contact_info})
+
+
+def faq(request):
+    faqs = FAQ.objects.all()  # Pobranie wszystkich pytań i odpowiedzi
+    return render(request, 'faq.html', {'faqs': faqs})
+
+
+def users(request):
+    if request.method == "POST":
+        # Pobierz słownik ról z formularza
+        roles = request.POST.getlist("roles")
+        for user_id, role in zip(request.POST.getlist("roles[]"), roles):
+            try:
+                # Znajdź użytkownika i zaktualizuj jego rolę
+                user = Users.objects.get(user_id=user_id)
+                user.role = role
+                user.save()
+            except Users.DoesNotExist:
+                continue
+        return redirect("users")  # Przekieruj na tę samą stronę po zapisaniu zmian
+
+    # Dla żądania GET pobierz listę użytkowników
+    users_list = Users.objects.all()
+
+    # Pobierz aktualnie zalogowanego użytkownika z sesji
+    custom_user = None
+    user_id = request.session.get('user_id')
+    if user_id:
+        try:
+            custom_user = Users.objects.get(user_id=user_id)
+        except Users.DoesNotExist:
+            pass  # Jeśli użytkownik nie istnieje, `custom_user` pozostanie jako None
+
+    # Przekaż listę użytkowników i aktualnie zalogowanego użytkownika do szablonu
+    return render(request, "users.html", {"users": users_list, "custom_user": custom_user})
+
+def index(request):
+    # Example query: get all books with genres
+    books = Books.objects.all()
+    books_with_genres = []
+
+    for book in books:
+        genres = Booksgenres.objects.filter(book=book).select_related('genre')
+        genre_names = ", ".join([g.genre.genre_name for g in genres])
+        books_with_genres.append({
+            'id': book.book_id,
+            'title': book.title,
+            'published_year': book.published_year,
+            'genre_names': genre_names,
+            'image': book.image.url if book.image else None,
+        })
+
+    return render(request, 'index.html', {'books': books_with_genres})
+
+
+def book_detail(request, book_id):
+    try:
+        # Get the book and its related details
+        book = Books.objects.get(pk=book_id)
+        genres = Booksgenres.objects.filter(book=book).select_related('genre')
+        genre_names = ", ".join([g.genre.genre_name for g in genres])
+        authors = Booksauthors.objects.filter(book=book).select_related('author')
+        author_names = ", ".join([a.author.author_name for a in authors])
+        copies = PhysicalBooks.objects.filter(book_id=1).count()
+        # Pass the book's details to the template
+        print(f"Image URL: {book.image.url}")
+        context = {
+            'book': book,
+            'genre_names': genre_names,
+            'author_names': author_names,
+            'image': book.image.url if book.image else None,
+            'copies': copies
+        }
+        return render(request, 'book_detail.html', context)
+    except Books.DoesNotExist:
+        return HttpResponse("Book not found.", status=404)
+
+def update_profile(request):
+    if request.method == 'POST':
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return HttpResponse("You are not logged in.", status=401)
+
+        try:
+            user = Users.objects.get(pk=user_id)
+            user.first_name = request.POST.get("first_name", user.first_name)
+            user.last_name = request.POST.get("last_name", user.last_name)
+            user.email = request.POST.get("email", user.email)
+            user.phone_number = request.POST.get("phone_number", user.phone_number)
+            user.save()
+            return redirect('/profile/')  # Przekierowanie na stronę profilu
+        except Users.DoesNotExist:
+            return HttpResponse("User not found.", status=404)
+    else:
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('/login')
+
+        user = Users.objects.get(pk=user_id)
+        return render(request, 'profile.html', {'user': user})

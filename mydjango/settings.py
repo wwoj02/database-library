@@ -24,6 +24,7 @@ SECRET_KEY = 'django-insecure-qj16#g@-_jv3!0hr_5$uy2o)p)$!^zde_yv3bg(c0^$$p9x3mj
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+APPEND_SLASH = False
 
 ALLOWED_HOSTS = []
 
@@ -84,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'mylibrary',
         'USER': 'root',
-        'PASSWORD': 'Spro0Ket_',
+        'PASSWORD': '!@#$%^&*()123',
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -125,7 +126,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = '/media/book_images/'
+MEDIA_ROOT = BASE_DIR / 'media/book_images'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
