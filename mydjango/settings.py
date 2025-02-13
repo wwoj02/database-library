@@ -24,7 +24,6 @@ SECRET_KEY = 'django-insecure-qj16#g@-_jv3!0hr_5$uy2o)p)$!^zde_yv3bg(c0^$$p9x3mj
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-APPEND_SLASH = False
 
 ALLOWED_HOSTS = []
 
@@ -40,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'libraryapp.apps.LibraryappConfig',
     'bootstrapform',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [

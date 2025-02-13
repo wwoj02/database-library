@@ -21,6 +21,7 @@
             <tbody>
                 {% for user in users %}
                 <tr>
+
                     <td>{{ forloop.counter }}</td>
                     <td>{{ user.username }}</td>
                     <td>{{ user.first_name }}</td>
@@ -34,7 +35,9 @@
                         </select>
                     </td>
                     <td>
-                        <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                        {% if user != custom_user %}
+                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
