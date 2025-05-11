@@ -8,6 +8,7 @@
 from django.db import models
 
 
+#KOMENTARZ
 
 class Authors(models.Model):
     author_id = models.AutoField(primary_key=True)
